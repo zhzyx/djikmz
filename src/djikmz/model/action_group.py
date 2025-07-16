@@ -1,7 +1,7 @@
 import xmltodict
 from .action import Action
 from pydantic import BaseModel, Field, field_validator, model_validator
-from typing import Dict, Any, List, Union
+from typing import Dict, Any, List, Optional, Union
 from enum import Enum
 
 class TriggerType(str, Enum):
@@ -87,8 +87,8 @@ class ActionGroup(BaseModel):
         description="ID of the waypoint where this action group ends"
     )
     execution_mode: str = Field(
-        default="sequential",
-        serialization_alias="executionMode",
+        default="sequence",
+        serialization_alias="actionGroupMode",
         description="only sequence"
     )
     actions: List[Action] = Field(
@@ -137,7 +137,7 @@ class ActionGroup(BaseModel):
         group_id = int(data.get("wpml:actionGroupId", 0))
         start_waypoint_id = int(data.get("wpml:actionGroupStartIndex", 0))
         end_waypoint_id = int(data.get("wpml:actionGroupEndIndex", 0))
-        execution_mode = data.get("wpml:executionMode", "sequential")
+        execution_mode = data.get("wpml:actionGroupMode", "sequence")
         actions = data.get("wpml:action", [])
         actions = [Action.from_dict(action) for action in actions]
         trigger = ActionTrigger.from_dict(data.get("wpml:actionTrigger", None))
@@ -290,7 +290,7 @@ class ActionGroup(BaseModel):
         """Remove all actions from the group."""
         self.actions.clear()
     
-    def get_action_by_id(self, action_id: int) -> Action | None:
+    def get_action_by_id(self, action_id: int) -> Optional[Action]:
         """
         Get an action by its ID.
         

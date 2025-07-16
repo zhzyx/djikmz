@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, field_validator, computed_field
+from pydantic import BaseModel, Field, field_validator, computed_field, model_serializer
 from typing import List, Dict, Any, Optional, Union
 import xmltodict
 
@@ -125,7 +125,7 @@ class Waypoint(BaseModel):
         serialization_alias="gimbalPitchAngle",
         description="Gimbal pitch angle in degrees. Required if “wpml:gimbalPitchMode” is “usePointSetting”."
     )
-    action_group: Optional[List[ActionGroup]] = Field(
+    action_group: Optional[ActionGroup] = Field(
         None,
         serialization_alias="actionGroup",
         description="Action group associated with the waypoint"
@@ -138,18 +138,22 @@ class Waypoint(BaseModel):
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert the Waypoint to a dictionary."""
-        data = self.model_dump(by_alias=True, exclude_none=True, exclude=["latitude", "longitude", "point", "action_group", "heading_param", "turn_param"])
+        data = {field.serialization_alias or name: getattr(self, name) for name, field in type(self).model_fields.items() if getattr(self, name) is not None}
+        # Remove the Point field from serialization, it will be added separately
+        exclude=["latitude", "longitude", "point", "action_group", "heading_param", "turn_param"]
+        for field in exclude:
+            data.pop(field, None)
         data = {"wpml:" + k: v for k, v in data.items()}
         data['Point'] = self.point.to_dict()
         
         # Handle complex field serialization
         if self.action_group:
-            data['wpml:actionGroup'] = [ag.to_dict() for ag in self.action_group]
+            data['wpml:actionGroup'] = self.action_group.to_dict()
         if self.heading_param:
             data['wpml:waypointHeadingParam'] = self.heading_param.to_dict()
         if self.turn_param:
             data['wpml:waypointTurnParam'] = self.turn_param.to_dict()
-        
+
         return data
 
     def to_xml(self) -> str:
@@ -185,10 +189,7 @@ class Waypoint(BaseModel):
             
             # Handle special cases for complex types
             if field_name == 'action_group' and value:
-                if isinstance(value, list):
-                    clean_data[field_name] = [ActionGroup.from_dict(ag) for ag in value]
-                else:
-                    clean_data[field_name] = [ActionGroup.from_dict(value)]
+                clean_data[field_name] = ActionGroup.from_dict(value)
             elif field_name == 'heading_param' and value:
                 clean_data[field_name] = WaypointHeadingParam.from_dict(value)
             elif field_name == 'turn_param' and value:
@@ -207,3 +208,7 @@ class Waypoint(BaseModel):
             raise ValueError("Invalid XML data: 'Placemark' not found.")
         return cls.from_dict(waypoint_data)
     
+    @model_serializer
+    def serialize(self) -> Dict[str, Any]:
+        """Serialize the Waypoint to a dictionary."""
+        return self.to_dict()

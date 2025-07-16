@@ -15,7 +15,7 @@ from typing import Type, Callable, Any
 # Add src directory to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
-from djikmz.action import (
+from djikmz.model.action import (
     Action,
     ActionType,
     TakePhotoAction,
@@ -31,7 +31,7 @@ from djikmz.action import (
     OrientedShootAction,
     ACTION_REGISTRY
 )
-from djikmz.action.camera_actions import PAYLOAD_LENS
+from djikmz.model.action.camera_actions import PAYLOAD_LENS
 
 
 def xml_roundtrip_test(original_action: BaseModel, from_xml_callable: Callable[[str], BaseModel]) -> None:

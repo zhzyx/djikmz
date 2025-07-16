@@ -1,8 +1,8 @@
 import pytest
-from src.djikmz.action_group import ActionGroup, ActionTrigger, TriggerType
-from src.djikmz.action.camera_actions import TakePhotoAction
-from src.djikmz.action.movement_actions import HoverAction
-from src.djikmz.action.gimbal_actions import GimbalRotateAction
+from djikmz.model.action_group import ActionGroup, ActionTrigger, TriggerType
+from djikmz.model.action.camera_actions import TakePhotoAction
+from djikmz.model.action.movement_actions import HoverAction
+from djikmz.model.action.gimbal_actions import GimbalRotateAction
 
 
 class TestActionGroupManagement:

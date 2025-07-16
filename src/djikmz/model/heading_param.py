@@ -6,7 +6,7 @@ including different heading modes and their specific parameters.
 """
 
 from typing import Optional, List, Dict, Any, Union
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator, model_serializer
 from enum import Enum
 
 
@@ -95,6 +95,7 @@ class WaypointHeadingParam(BaseModel):
     """
     
     waypoint_heading_mode: WaypointHeadingMode|str = Field(
+        default=WaypointHeadingMode.FOLLOW_WAYLINE,
         serialization_alias="waypointHeadingMode",
         description="Heading mode for the waypoint"
     )
@@ -114,6 +115,7 @@ class WaypointHeadingParam(BaseModel):
     )
     
     waypoint_heading_path_mode: WaypointHeadingPathMode|str = Field(
+        default=WaypointHeadingPathMode.FOLLOW_BAD_ARC,
         serialization_alias="waypointHeadingPathMode",
         description="Direction of rotation for aircraft yaw angle"
     )
@@ -236,4 +238,9 @@ class WaypointHeadingParam(BaseModel):
         
         result += f", path={self.waypoint_heading_path_mode.value})"
         return result
+    
+    @model_serializer
+    def serialize(self) -> Dict[str, Any]:
+        """Serialize the heading parameter to a dictionary."""
+        return self.to_dict()
 

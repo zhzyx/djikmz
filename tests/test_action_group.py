@@ -18,8 +18,8 @@ import os
 # Add src directory to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
-from djikmz.action_group import ActionGroup, ActionTrigger, TriggerType
-from djikmz.action import TakePhotoAction, HoverAction, RotateYawAction
+from djikmz.model.action_group import ActionGroup, ActionTrigger, TriggerType
+from djikmz.model.action import TakePhotoAction, HoverAction, RotateYawAction
 
 
 class TestTriggerType:
@@ -135,7 +135,7 @@ class TestActionGroup:
         assert group.group_id == 0
         assert group.start_waypoint_id == 0  # Should be set to group_id by validator
         assert group.end_waypoint_id == 0    # Should be set to start_waypoint_id by validator
-        assert group.execution_mode == "sequential"
+        assert group.execution_mode == "sequence"
         assert group.actions == []
         assert isinstance(group.trigger, ActionTrigger)
         assert group.trigger.type == TriggerType.REACH_POINT
@@ -152,7 +152,7 @@ class TestActionGroup:
             group_id=10,
             start_waypoint_id=15,
             end_waypoint_id=20,
-            execution_mode="sequential",
+            execution_mode="sequence",
             actions=actions,
             trigger=trigger
         )
@@ -160,7 +160,7 @@ class TestActionGroup:
         assert group.group_id == 10
         assert group.start_waypoint_id == 15
         assert group.end_waypoint_id == 20
-        assert group.execution_mode == "sequential"
+        assert group.execution_mode == "sequence"
         assert len(group.actions) == 2
         assert group.trigger.type == TriggerType.MULTIPLE_TIMING
     
@@ -235,7 +235,7 @@ class TestActionGroup:
             group_id=5,
             start_waypoint_id=10,
             end_waypoint_id=15,
-            execution_mode="sequential",
+            execution_mode="sequence",
             actions=actions,
             trigger=trigger
         )
@@ -246,7 +246,7 @@ class TestActionGroup:
         assert result["wpml:actionGroupId"] == 5
         assert result["wpml:actionGroupStartIndex"] == 10
         assert result["wpml:actionGroupEndIndex"] == 15
-        assert result["wpml:executionMode"] == "sequential"
+        assert result["wpml:actionGroupMode"] == "sequence"
         
         # Check actions
         assert "wpml:action" in result
@@ -287,7 +287,7 @@ class TestActionGroup:
             <wpml:actionGroupId>5</wpml:actionGroupId>
             <wpml:actionGroupStartIndex>10</wpml:actionGroupStartIndex>
             <wpml:actionGroupEndIndex>15</wpml:actionGroupEndIndex>
-            <wpml:executionMode>sequential</wpml:executionMode>
+            <wpml:actionGroupMode>sequence</wpml:actionGroupMode>
             <wpml:action>
                 <wpml:actionId>1</wpml:actionId>
                 <wpml:actionActuatorFunc>takePhoto</wpml:actionActuatorFunc>
@@ -306,7 +306,7 @@ class TestActionGroup:
             assert group.group_id == 5
             assert group.start_waypoint_id == 10
             assert group.end_waypoint_id == 15
-            assert group.execution_mode == "sequential"
+            assert group.execution_mode == "sequence"
         except (AttributeError, NotImplementedError):
             # Skip if Action.from_dict is not implemented
             pytest.skip("Action.from_dict method not implemented")
@@ -325,7 +325,7 @@ class TestActionGroup:
             group_id=5,
             start_waypoint_id=10,
             end_waypoint_id=15,
-            execution_mode="sequential",
+            execution_mode="sequence",
             actions=actions,
             trigger=trigger
         )
@@ -360,7 +360,7 @@ class TestActionGroup:
             group_id=5,
             start_waypoint_id=10,
             end_waypoint_id=15,
-            execution_mode="sequential"
+            execution_mode="sequence"
         )
         
         # Serialize to XML
@@ -393,7 +393,7 @@ class TestActionGroup:
             group_id=7,
             start_waypoint_id=12,
             end_waypoint_id=18,
-            execution_mode="sequential",
+            execution_mode="sequence",
             actions=actions,
             trigger=trigger
         )
@@ -450,7 +450,7 @@ class TestActionGroup:
         assert recreated_group.group_id == 0
         assert recreated_group.start_waypoint_id == 0
         assert recreated_group.end_waypoint_id == 0
-        assert recreated_group.execution_mode == "sequential"
+        assert recreated_group.execution_mode == "sequence"
         assert len(recreated_group.actions) == 0
         assert recreated_group.trigger.type == TriggerType.REACH_POINT
         assert recreated_group.trigger.param is None or recreated_group.trigger.param == 0.0

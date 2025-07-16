@@ -4,7 +4,7 @@ Test cases for waypoint heading parameter module.
 
 import pytest
 from pydantic import ValidationError
-from src.djikmz.heading_param import (
+from djikmz.model.heading_param import (
     WaypointHeadingParam,
     WaypointHeadingMode,
     WaypointHeadingPathMode,

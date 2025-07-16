@@ -10,24 +10,18 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 from enum import Enum
 import xmltodict
 
-
-class WaypointTurnMode(str, Enum):
-    """Enumeration of waypoint turn modes."""
-    
-    COORDINATE_TURN = "coordinateTurn"
-    """Coordinated turns, no dips, early turns."""
-    
-    TO_POINT_AND_STOP_WITH_DISCONTINUITY_CURVATURE = "toPointAndStopWithDiscontinuityCurvature"
-    """Fly in a straight line and the aircraft stops at the point."""
-    
-    TO_POINT_AND_STOP_WITH_CONTINUITY_CURVATURE = "toPointAndStopWithContinuityCurvature"
-    """Fly in a curve and the aircraft stops at the point."""
-    
-    TO_POINT_AND_PASS_WITH_CONTINUITY_CURVATURE = "toPointAndPassWithContinuityCurvature"
-    """Fly in a curve and the aircraft will not stop at the point."""
-    
+class StrEnum(str, Enum):
+    """Base class for string enums."""
     def __str__(self):
         return self.value
+
+
+class WaypointTurnMode(StrEnum):
+    """Enumeration of waypoint turn modes."""
+    COORDINATED_TURN = "coordinateTurn" # DJI use coordinateTurn without 'd'
+    TURN_AT_POINT = "toPointAndStopWithDiscontinuityCurvature"
+    CURVED_TURN_WITHOUT_STOP = "toPointAndPassWithContinuityCurvature"
+    CURVED_TURN_WITH_STOP = "toPointAndStopWithContinuityCurvature"
 
 
 class WaypointTurnParam(BaseModel):
@@ -67,8 +61,8 @@ class WaypointTurnParam(BaseModel):
         
         # These modes require waypointTurnDampingDist
         modes_requiring_damping = {
-            WaypointTurnMode.COORDINATE_TURN,
-            WaypointTurnMode.TO_POINT_AND_PASS_WITH_CONTINUITY_CURVATURE
+            WaypointTurnMode.COORDINATED_TURN,
+            # WaypointTurnMode.CURVED_TURN_WITHOUT_STOP  # from the dji pilot2, this mode does not require damping distance
         }
         
         if (self.waypoint_turn_mode in modes_requiring_damping and 
@@ -133,33 +127,32 @@ class WaypointTurnParam(BaseModel):
         return cls.from_dict(param_data)
     
     @classmethod
-    def create_coordinate_turn(cls, damping_dist: float) -> "WaypointTurnParam":
+    def create_coordinated_turn(cls, damping_dist: float) -> "WaypointTurnParam":
         """Create turn param for coordinate turn mode."""
         return cls(
-            waypoint_turn_mode=WaypointTurnMode.COORDINATE_TURN,
+            waypoint_turn_mode=WaypointTurnMode.COORDINATED_TURN,
             waypoint_turn_damping_dist=damping_dist
         )
     
     @classmethod
-    def create_stop_with_discontinuity(cls) -> "WaypointTurnParam":
+    def create_turn_at_point(cls) -> "WaypointTurnParam":
         """Create turn param for stop with discontinuity curvature mode."""
         return cls(
-            waypoint_turn_mode=WaypointTurnMode.TO_POINT_AND_STOP_WITH_DISCONTINUITY_CURVATURE
+            waypoint_turn_mode=WaypointTurnMode.TURN_AT_POINT
         )
     
     @classmethod
-    def create_stop_with_continuity(cls) -> "WaypointTurnParam":
+    def create_curved_turn_with_stop(cls) -> "WaypointTurnParam":
         """Create turn param for stop with continuity curvature mode."""
         return cls(
-            waypoint_turn_mode=WaypointTurnMode.TO_POINT_AND_STOP_WITH_CONTINUITY_CURVATURE
+            waypoint_turn_mode=WaypointTurnMode.CURVED_TURN_WITH_STOP
         )
     
     @classmethod
-    def create_pass_with_continuity(cls, damping_dist: float) -> "WaypointTurnParam":
+    def create_curved_turn_without_stop(cls) -> "WaypointTurnParam":
         """Create turn param for pass with continuity curvature mode."""
         return cls(
-            waypoint_turn_mode=WaypointTurnMode.TO_POINT_AND_PASS_WITH_CONTINUITY_CURVATURE,
-            waypoint_turn_damping_dist=damping_dist
+            waypoint_turn_mode=WaypointTurnMode.CURVED_TURN_WITHOUT_STOP,
         )
     
     def __str__(self) -> str:

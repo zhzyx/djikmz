@@ -1,7 +1,7 @@
 from typing import Dict, Any, Optional, Union
 from enum import Enum
 # from dataclasses import dataclass, fields, is_dataclass, field
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_serializer
 import xmltodict
 
 from .registry import ACTION_REGISTRY
@@ -58,7 +58,7 @@ class Action(BaseModel):
                 raise ValueError(f"Action class {self.__class__.__name__} not found in ACTION_REGISTRY")
 
     def to_dict(self) -> Dict[str, Any]:
-        data = self.model_dump(by_alias=True, exclude_none=True)
+        data = {field.serialization_alias or name: getattr(self,name) for name , field in type(self).model_fields.items() if getattr(self, name) is not None}
         header_keys = {
             field.serialization_alias or name for name, field in Action.model_fields.items()
         } 
@@ -122,6 +122,10 @@ class Action(BaseModel):
                 cls_params[name] = action_params[xml_key]
         
         return action_cls(action_id=action_id, **cls_params)
+    
+    @model_serializer
+    def ser_model(self) -> Dict[str, Any]:
+        return self.to_dict()
 
 
 

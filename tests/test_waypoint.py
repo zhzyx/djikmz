@@ -4,11 +4,11 @@ Test cases for waypoint module.
 
 import pytest
 from pydantic import ValidationError
-from src.djikmz.waypoint import Waypoint, Point
-from src.djikmz.action_group import ActionGroup, ActionTrigger, TriggerType
-from src.djikmz.heading_param import WaypointHeadingParam, WaypointHeadingMode, WaypointHeadingPathMode
-from src.djikmz.turn_param import WaypointTurnParam, WaypointTurnMode
-from src.djikmz.action.camera_actions import TakePhotoAction
+from djikmz.model.waypoint import Waypoint, Point
+from djikmz.model.action_group import ActionGroup, ActionTrigger, TriggerType
+from djikmz.model.heading_param import WaypointHeadingParam, WaypointHeadingMode, WaypointHeadingPathMode
+from djikmz.model.turn_param import WaypointTurnParam, WaypointTurnMode
+from djikmz.model.action.camera_actions import TakePhotoAction
 
 
 class TestPoint:
@@ -125,7 +125,7 @@ class TestWaypoint:
             use_global_turn_param=0,
             use_straight_line=0,
             gimbal_pitch_angle=-45.0,
-            action_group=[action_group]
+            action_group=action_group
         )
         
         assert waypoint.latitude == 37.7749
@@ -141,8 +141,7 @@ class TestWaypoint:
         assert waypoint.use_global_turn_param == 0
         assert waypoint.use_straight_line == 0
         assert waypoint.gimbal_pitch_angle == -45.0
-        assert len(waypoint.action_group) == 1
-        assert waypoint.action_group[0] == action_group
+        assert waypoint.action_group == action_group
     
     def test_waypoint_coordinate_validation(self):
         """Test waypoint coordinate validation."""
@@ -240,14 +239,13 @@ class TestWaypoint:
         waypoint = Waypoint(
             latitude=37.7749,
             longitude=-122.4194,
-            action_group=[action_group]
+            action_group=action_group
         )
         
         result = waypoint.to_dict()
         
         assert 'wpml:actionGroup' in result
-        assert len(result['wpml:actionGroup']) == 1
-        assert isinstance(result['wpml:actionGroup'][0], dict)
+        assert isinstance(result['wpml:actionGroup'], dict)
     
     def test_waypoint_from_dict(self):
         """Test waypoint from_dict method."""
@@ -295,7 +293,7 @@ class TestWaypoint:
             'Point': {
                 'coordinates': '-122.4194,37.7749'
             },
-            'actionGroup': [action_group_data]
+            'wpml:actionGroup': action_group_data
         }
         
         waypoint = Waypoint.from_dict(data)
@@ -304,8 +302,7 @@ class TestWaypoint:
         assert waypoint.longitude == -122.4194
         assert waypoint.waypoint_id == 1
         assert waypoint.action_group is not None
-        assert len(waypoint.action_group) == 1
-        assert waypoint.action_group[0].group_id == 1
+        assert waypoint.action_group.group_id == 1
     
     def test_waypoint_xml_roundtrip_minimal(self):
         """Test waypoint XML serialization roundtrip with minimal data."""
@@ -342,7 +339,7 @@ class TestWaypoint:
             use_global_speed=0,
             use_straight_line=0,
             gimbal_pitch_angle=-30.0,
-            action_group=[action_group]
+            action_group=action_group
         )
         
         # Convert to XML and back
@@ -360,8 +357,7 @@ class TestWaypoint:
         assert recreated.use_global_speed == original.use_global_speed
         assert recreated.use_straight_line == original.use_straight_line
         assert recreated.gimbal_pitch_angle == original.gimbal_pitch_angle
-        assert len(recreated.action_group) == len(original.action_group)
-        assert recreated.action_group[0].group_id == original.action_group[0].group_id
+        assert recreated.action_group.group_id == original.action_group.group_id
 
 
 
@@ -390,36 +386,31 @@ class TestWaypointEdgeCases:
         assert waypoint.gimbal_pitch_angle is None
         assert waypoint.action_group is None
     
-    def test_waypoint_empty_action_group_list(self):
-        """Test waypoint with empty action group list."""
+    def test_waypoint_empty_action_group(self):
+        """Test waypoint with no action group."""
         waypoint = Waypoint(
             latitude=0,
             longitude=0,
-            action_group=[]
+            action_group=None
         )
         
-        assert waypoint.action_group == []
+        assert waypoint.action_group is None
     
-    def test_waypoint_multiple_action_groups(self):
-        """Test waypoint with multiple action groups."""
-        action_group1 = ActionGroup(
+    def test_waypoint_single_action_group(self):
+        """Test waypoint with a single action group."""
+        action_group = ActionGroup(
             group_id=1,
             actions=[TakePhotoAction(action_id=1)]
         )
-        action_group2 = ActionGroup(
-            group_id=2,
-            actions=[TakePhotoAction(action_id=2)]
-        )
         
         waypoint = Waypoint(
             latitude=0,
             longitude=0,
-            action_group=[action_group1, action_group2]
+            action_group=action_group
         )
         
-        assert len(waypoint.action_group) == 2
-        assert waypoint.action_group[0].group_id == 1
-        assert waypoint.action_group[1].group_id == 2
+        assert waypoint.action_group is not None
+        assert waypoint.action_group.group_id == 1
     
     def test_invalid_xml_data(self):
         """Test handling of invalid XML data."""
@@ -461,20 +452,20 @@ class TestWaypointEdgeCases:
         # Test model_dump with aliases
         data = waypoint.model_dump(by_alias=True)
         
-        assert 'index' in data  # waypoint_id -> index
-        assert 'height' in data  # height -> height (no change)
-        assert 'ellipsoidHeight' in data  # ellipsoid_height -> ellipsoidHeight
-        assert 'waypointSpeed' in data  # speed -> waypointSpeed
+        assert 'wpml:index' in data  # waypoint_id -> index
+        assert 'wpml:height' in data  # height -> height (no change)
+        assert 'wpml:ellipsoidHeight' in data  # ellipsoid_height -> ellipsoidHeight
+        assert 'wpml:waypointSpeed' in data  # speed -> waypointSpeed
         
         # Original field names should not be present when using aliases
-        assert 'waypoint_id' not in data
-        assert 'ellipsoid_height' not in data
-        assert 'speed' not in data
+        assert 'wpml:waypoint_id' not in data
+        assert 'wpml:ellipsoid_height' not in data
+        assert 'wpml:speed' not in data
     
     def test_waypoint_with_turn_param(self):
         """Test waypoint with turn parameter."""
         turn_param = WaypointTurnParam(
-            waypoint_turn_mode=WaypointTurnMode.COORDINATE_TURN,
+            waypoint_turn_mode=WaypointTurnMode.COORDINATED_TURN,
             waypoint_turn_damping_dist=5.0
         )
         
@@ -491,7 +482,7 @@ class TestWaypointEdgeCases:
     def test_waypoint_with_turn_param_to_dict(self):
         """Test waypoint to_dict with turn parameter."""
         turn_param = WaypointTurnParam(
-            waypoint_turn_mode=WaypointTurnMode.COORDINATE_TURN,
+            waypoint_turn_mode=WaypointTurnMode.COORDINATED_TURN,
             waypoint_turn_damping_dist=5.0
         )
         
@@ -528,14 +519,14 @@ class TestWaypointEdgeCases:
         assert waypoint.latitude == 37.7749
         assert waypoint.longitude == -122.4194
         assert waypoint.turn_param is not None
-        assert waypoint.turn_param.waypoint_turn_mode == WaypointTurnMode.COORDINATE_TURN
+        assert waypoint.turn_param.waypoint_turn_mode == WaypointTurnMode.COORDINATED_TURN
         assert waypoint.turn_param.waypoint_turn_damping_dist == 5.0
         assert waypoint.use_global_turn_param == 0
     
     def test_waypoint_with_turn_param_xml_roundtrip(self):
         """Test waypoint XML roundtrip with turn parameter."""
         turn_param = WaypointTurnParam(
-            waypoint_turn_mode=WaypointTurnMode.TO_POINT_AND_PASS_WITH_CONTINUITY_CURVATURE,
+            waypoint_turn_mode=WaypointTurnMode.CURVED_TURN_WITHOUT_STOP,
             waypoint_turn_damping_dist=3.0
         )
         
@@ -563,36 +554,36 @@ class TestWaypointEdgeCases:
     def test_waypoint_with_different_turn_modes(self):
         """Test waypoint with different turn parameter modes."""
         # Test coordinate turn
-        turn_param1 = WaypointTurnParam.create_coordinate_turn(5.0)
+        turn_param1 = WaypointTurnParam.create_coordinated_turn(5.0)
         waypoint1 = Waypoint(
             latitude=0, longitude=0,
             turn_param=turn_param1
         )
-        assert waypoint1.turn_param.waypoint_turn_mode == WaypointTurnMode.COORDINATE_TURN
+        assert waypoint1.turn_param.waypoint_turn_mode == WaypointTurnMode.COORDINATED_TURN
         
         # Test stop with discontinuity  
-        turn_param2 = WaypointTurnParam.create_stop_with_discontinuity()
+        turn_param2 = WaypointTurnParam.create_turn_at_point()
         waypoint2 = Waypoint(
             latitude=0, longitude=0,
             turn_param=turn_param2
         )
-        assert waypoint2.turn_param.waypoint_turn_mode == WaypointTurnMode.TO_POINT_AND_STOP_WITH_DISCONTINUITY_CURVATURE
+        assert waypoint2.turn_param.waypoint_turn_mode == WaypointTurnMode.TURN_AT_POINT
         
         # Test stop with continuity
-        turn_param3 = WaypointTurnParam.create_stop_with_continuity()
+        turn_param3 = WaypointTurnParam.create_curved_turn_with_stop()
         waypoint3 = Waypoint(
             latitude=0, longitude=0,
             turn_param=turn_param3
         )
-        assert waypoint3.turn_param.waypoint_turn_mode == WaypointTurnMode.TO_POINT_AND_STOP_WITH_CONTINUITY_CURVATURE
+        assert waypoint3.turn_param.waypoint_turn_mode == WaypointTurnMode.CURVED_TURN_WITH_STOP 
         
         # Test pass with continuity
-        turn_param4 = WaypointTurnParam.create_pass_with_continuity(3.0)
+        turn_param4 = WaypointTurnParam.create_curved_turn_without_stop()
         waypoint4 = Waypoint(
             latitude=0, longitude=0,
             turn_param=turn_param4
         )
-        assert waypoint4.turn_param.waypoint_turn_mode == WaypointTurnMode.TO_POINT_AND_PASS_WITH_CONTINUITY_CURVATURE
+        assert waypoint4.turn_param.waypoint_turn_mode == WaypointTurnMode.CURVED_TURN_WITHOUT_STOP
     
     def test_waypoint_with_both_heading_and_turn_params(self):
         """Test waypoint with both heading and turn parameters."""
@@ -602,7 +593,7 @@ class TestWaypointEdgeCases:
         )
         
         turn_param = WaypointTurnParam(
-            waypoint_turn_mode=WaypointTurnMode.COORDINATE_TURN,
+            waypoint_turn_mode=WaypointTurnMode.COORDINATED_TURN,
             waypoint_turn_damping_dist=5.0
         )
         
@@ -638,7 +629,7 @@ class TestWaypointEdgeCases:
         assert waypoint.turn_param is None
         
         # Test waypoint with turn param but using global settings
-        turn_param = WaypointTurnParam.create_stop_with_discontinuity()
+        turn_param = WaypointTurnParam.create_turn_at_point()
         waypoint = Waypoint(
             latitude=0,
             longitude=0,
